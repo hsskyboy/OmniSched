@@ -84,7 +84,7 @@ bool path_exists(const char* path) {
 
 // 核心調度初始化邏輯
 void apply_core_optimizations() {
-    std::string all_cores = read_node("/sys/devices/system/cpu/possible")
+    std::string all_cores = read_node("/sys/devices/system/cpu/possible");
     // 取得裝置所有 CPU 核心 (例如: 0-7);
     if (all_cores.empty()) all_cores = "0-7"; 
 
@@ -185,3 +185,4 @@ int main() {
 
     return 0;
 }
+

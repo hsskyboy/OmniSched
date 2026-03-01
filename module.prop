@@ -1,6 +1,6 @@
 id=omnisched-universal
 name=OmniSched
-version=v1.1.0
-versionCode=2
+version=v1.2.0
+versionCode=4
 author=EmperorEye1993 & HSSkyBoy
 description=安卓通用型底層調度模組。動態識別多核架構與 SoC (高通/聯發科等)，智能分配 Cpuset，底層劫持 Vulkan 渲染並優化 ZRAM。不含臃腫安慰劑，專為 Android 12+ 打造，兼顧極致性能與絕佳能效比。

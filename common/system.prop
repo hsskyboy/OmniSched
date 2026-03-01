@@ -1,40 +1,30 @@
-# GPU & Hardware Acceleration
-debug.overlayui.enable=1
-debug.performance.tuning=1
-hw3d.force=1
-hwui.render_dirty_regions=true
-persist.sys.ui.hw=1
-ro.config.enable.hw_accel=true
-ro.product.gpu.driver=1
-ro.fb.mode=1
-ro.sf.compbypass.enable=0
-video.accelerate.hw=1
+# OmniSched 核心靜態屬性配置
+# 說明：存放不依賴處理器型號的通用唯讀屬性。
 
 # Vulkan Core Settings
 debug.hwui.renderer=skiavk
 ro.hwui.use_vulkan=true
 debug.renderengine.backend=skiavk
 debug.renderengine.graphite=true
-persist.sys.force_sw_gles=0
-debug.vulkan.disable_sync_to_vblank=0
-
-# Graphic Properties
-debug.gralloc.gfx_ubwc_disable=0
-vendor.gralloc.disable_ubwc=0
-debug.egl.hw=0
-debug.mdpcomp.logs=0
-debug.sf.enable_advanced_sf_phase_offset=1
+hwui.render_dirty_regions=true
+ro.config.enable.hw_accel=true
 debug.sf.enable_hwc_vds=1
 debug.sf.latch_unsignaled=1
-persist.vendor.color.matrix=2
-vendor.gralloc.disable_ubwc=0
 
-# Qualcomm Perf & Memory
-ro.vendor.qti.sys.fw.bservice_enable=true
-ro.vendor.qti.core.ctl_max_cpu=4
-ro.vendor.qti.core.ctl_min_cpu=2
+# System and UI rendering
+persist.sys.ui.hw=1
+video.accelerate.hw=1
+debug.performance.tuning=1
+debug.sf.enable_advanced_sf_phase_offset=1
+ro.surface_flinger.use_smart_90_for_video=true
+debug.overlayui.enable=1
 
-# Touchscreen & ADB
+# Touchscreen
 persist.vendor.qti.inputopts.enable=true
 persist.vendor.qti.inputopts.movetouchslop=0.6
+
+# Graphics and debug
+debug.gralloc.gfx_ubwc_disable=0
+vendor.gralloc.disable_ubwc=0
+debug.mdpcomp.logs=0
 ro.adb.secure=0

@@ -6,7 +6,7 @@ int main() {
 
     while (true) {
         apply_core_optimizations();
-        sleep(1800); // 1800 秒 = 30 分鐘
+        sleep(900); // 900 秒 = 15 分鐘
     }
 
     return 0;

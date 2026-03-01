@@ -1,4 +1,4 @@
-#include "sched.h"
+#include "core_sched.h"
 #include <unistd.h>
 
 int main() {

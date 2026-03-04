@@ -1,6 +1,6 @@
 #!/system/bin/sh
 ui_print "========================================="
-ui_print "      OmniSched | 全域靈動調度 (A12+)"
+ui_print "      OmniSched | 全域靈動分配 (A12+)"
 ui_print "       Author：HSSkyBoy/nikobe918"
 ui_print "========================================="
 

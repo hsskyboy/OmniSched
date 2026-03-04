@@ -14,16 +14,22 @@ void init_daemon() {
     }
 }
 
-std::string get_best_cpu_governor(const std::string& avail_govs) {
-    if (avail_govs.find("uag") != std::string::npos) return "uag";
-    if (avail_govs.find("sugov_ext") != std::string::npos) return "sugov_ext";
-    if (avail_govs.find("schedutil") != std::string::npos) return "schedutil";
-    if (avail_govs.find("interactive") != std::string::npos) return "interactive";
-    if (avail_govs.find("ondemand") != std::string::npos) return "ondemand";
+std::string get_best_cpu_governor(const std::string& avail_govs, bool is_mtk) {
+    if (is_mtk) {
+        if (avail_govs.find("sugov_ext") != std::string::npos) return "sugov_ext";
+        if (avail_govs.find("schedutil") != std::string::npos) return "schedutil";
+    } else {
+        if (avail_govs.find("walt") != std::string::npos) return "walt";
+        if (avail_govs.find("uag") != std::string::npos) return "uag";
+        if (avail_govs.find("schedutil") != std::string::npos) return "schedutil";
+    }
     return ""; 
 }
 
 void apply_core_optimizations() {
+    std::string platform = execute_command("getprop ro.board.platform");
+    bool is_mtk = (platform.find("mt") != std::string::npos);
+
     std::string all_cores = read_node("/sys/devices/system/cpu/possible");
     if (all_cores.empty()) all_cores = "0-7"; 
 
@@ -66,6 +72,10 @@ void apply_core_optimizations() {
     write_node("/dev/cpuset/background/cpus", cluster_little.c_str());
     write_node("/dev/cpuset/system-background/cpus", cluster_little.c_str());
 
+    if (path_exists("/dev/cpuset/top-app/uclamp.min")) {
+        write_node("/dev/cpuset/top-app/uclamp.min", "5");
+    }
+
     const char* cpu_dir_path = "/sys/devices/system/cpu/";
     DIR* cpu_dir = opendir(cpu_dir_path);
     if (cpu_dir) {
@@ -74,7 +84,7 @@ void apply_core_optimizations() {
             if (strncmp(entry->d_name, "cpu", 3) == 0 && isdigit(entry->d_name[3])) {
                 std::string base_path = std::string(cpu_dir_path) + entry->d_name + "/cpufreq/";
                 std::string avail_govs = read_node((base_path + "scaling_available_governors").c_str());
-                std::string best_gov = get_best_cpu_governor(avail_govs);
+                std::string best_gov = get_best_cpu_governor(avail_govs, is_mtk);
                 
                 if (!best_gov.empty()) {
                     write_node((base_path + "scaling_governor").c_str(), best_gov.c_str());

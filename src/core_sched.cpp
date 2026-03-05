@@ -69,8 +69,9 @@ void apply_core_optimizations() {
     } else {
         write_node("/dev/cpuset/foreground/cpus", all_cores.c_str());
     }
-    write_node("/dev/cpuset/background/cpus", cluster_little.c_str());
-    write_node("/dev/cpuset/system-background/cpus", cluster_little.c_str());
+    std::string sys_bg_cpus = combine_cpus(cluster_little, cluster_mid);
+    write_node("/dev/cpuset/system-background/cpus", sys_bg_cpus.c_str());
+    write_node("/dev/cpuset/background/cpus", sys_bg_cpus.c_str());
 
     if (path_exists("/dev/cpuset/top-app/uclamp.min")) {
         write_node("/dev/cpuset/top-app/uclamp.min", "5");

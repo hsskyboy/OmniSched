@@ -29,14 +29,16 @@ jobs:
               -DANDROID_ABI=arm64-v8a \
               -DANDROID_PLATFORM=android-31 \
               ..
-        make
+        cmake --build .
 
     - name: Package Magisk Module
       run: |
-        mkdir -p module_out/common
-        cp build/omnisched_daemon module_out/
+        mkdir -p module_out/system/bin
+        cp build/omnisched_daemon module_out/system/bin/
         cp module.prop customize.sh module_out/
-        cp common/system.prop common/post-fs-data.sh common/service.sh module_out/common/
+
+        cp module/system.prop module/post-fs-data.sh module/service.sh module_out/
+
         cp -r META-INF module_out/
         
         cd module_out

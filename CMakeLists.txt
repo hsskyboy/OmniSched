@@ -11,4 +11,4 @@ include_directories(include)
 
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(omnisched_daemon ${SOURCES})
+add_executable(omnisched ${SOURCES})

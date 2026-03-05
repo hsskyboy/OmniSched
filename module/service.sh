@@ -8,5 +8,5 @@ done
 settings put system config.hw_quickpoweron true
 settings put system surface_flinger_use_frame_rate_api true
 
-chmod +x $MODDIR/omnisched_daemon
-nohup $MODDIR/omnisched_daemon > /dev/null 2>&1 &
+chmod +x $MODDIR/omnisched
+nohup $MODDIR/omnisched > /dev/null 2>&1 &

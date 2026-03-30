@@ -37,7 +37,7 @@ jobs:
         cp build/omnisched module_out/system/bin/ 
         cp module.prop customize.sh module_out/
 
-        cp module/system.prop module/post-fs-data.sh module/service.sh module_out/
+        cp module/post-fs-data.sh module/service.sh module_out/
 
         cp -r webroot module_out/
 

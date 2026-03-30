@@ -1,6 +1,6 @@
 id=omnisched
 name=OmniSched
-version=v3.1.0
-versionCode=32
+version=v3.1.1
+versionCode=33
 author=HSSkyBoy & @nikobe918
 description=安卓通用型調度模組。v3.1 導入響應式事件驅動與即時場景識別，支援遊戲模式與三級動態性能配置檔組，採用 C++ 響應式事件驅動達成零開銷常駐，。內建 WebUI 儀表板，深度適配 Android 14+ MGLRU、Uclamp 算力鉗制與渲染引擎劫持，實現極致能效平衡。

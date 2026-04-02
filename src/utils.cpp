@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <sstream>
 
 bool write_node(const char* path, const char* value) {
     const std::string current_value = read_node(path); // 模擬 val
@@ -49,6 +52,37 @@ std::string combine_cpus(const std::string& cpus1, const std::string& cpus2) {
     if (cpus1.empty()) return cpus2;
     if (cpus2.empty()) return cpus1;
     return cpus1 + "," + cpus2;
+}
+
+int count_cpus_in_cpuset(const std::string& cpuset) {
+    if (cpuset.empty()) return 0;
+
+    int cpu_count = 0;
+    std::stringstream stream(cpuset);
+    std::string token;
+
+    while (std::getline(stream, token, ',')) {
+        token.erase(std::remove_if(token.begin(), token.end(),
+                                   [](unsigned char ch) { return std::isspace(ch); }),
+                    token.end());
+        if (token.empty()) continue;
+
+        const std::size_t dash_pos = token.find('-');
+        if (dash_pos != std::string::npos) {
+            const int start = std::atoi(token.substr(0, dash_pos).c_str());
+            const int end = std::atoi(token.substr(dash_pos + 1).c_str());
+            if (start >= 0 && end >= start) {
+                cpu_count += (end - start + 1);
+            }
+        } else {
+            const int core = std::atoi(token.c_str());
+            if (core >= 0) {
+                ++cpu_count;
+            }
+        }
+    }
+
+    return cpu_count;
 }
 
 bool path_exists(const char* path) {

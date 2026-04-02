@@ -11,17 +11,89 @@
 #include <dirent.h>
 
 namespace {
-constexpr const char* AUTO_TOP_APP_UCLAMP_MIN = "20";
+constexpr const char* AUTO_TOP_APP_UCLAMP_MIN_ENTRY = "12";
+constexpr const char* AUTO_TOP_APP_UCLAMP_MIN_BALANCED = "16";
+constexpr const char* AUTO_TOP_APP_UCLAMP_MIN_PERF = "20";
 constexpr const char* DEFAULT_TOP_APP_UCLAMP_MIN = "10";
 constexpr const char* LITE_TOP_APP_UCLAMP_MAX = "85";
 constexpr const char* DEFAULT_TOP_APP_UCLAMP_MAX = "max";
-constexpr const char* AUTO_BACKGROUND_UCLAMP_MAX = "35";
+constexpr const char* AUTO_BACKGROUND_UCLAMP_MAX_ENTRY = "45";
+constexpr const char* AUTO_BACKGROUND_UCLAMP_MAX_BALANCED = "40";
+constexpr const char* AUTO_BACKGROUND_UCLAMP_MAX_PERF = "32";
+constexpr const char* AUTO_BACKGROUND_UCLAMP_MAX_DEFAULT = "35";
 constexpr const char* LITE_BACKGROUND_UCLAMP_MAX = "40";
 constexpr const char* DEFAULT_BACKGROUND_UCLAMP_MAX = "50";
+
+struct AutoOptimizeProfile {
+    std::string foreground_cpus;
+    std::string system_background_cpus;
+    std::string background_cpus;
+    const char* top_app_uclamp_min;
+    const char* background_uclamp_max;
+};
 
 int get_android_api_level() {
     const std::string api = execute_command("getprop ro.build.version.sdk");
     return std::atoi(api.c_str());
+}
+
+bool has_dedicated_big_cluster(const CpuTopology& topology) {
+    return !topology.cluster_big.empty() && topology.cluster_big != topology.cluster_mid;
+}
+
+bool has_dedicated_mid_cluster(const CpuTopology& topology) {
+    return !topology.cluster_mid.empty() && topology.cluster_mid != topology.cluster_big;
+}
+
+std::string resolve_system_background_cpus(const CpuTopology& topology) {
+    std::string sys_bg = combine_cpus(topology.cluster_little, topology.cluster_mid);
+    if (sys_bg.empty()) {
+        sys_bg = topology.cluster_little;
+    }
+    if (sys_bg.empty()) {
+        sys_bg = topology.all_cores;
+    }
+    return sys_bg;
+}
+
+const char* pick_auto_top_app_uclamp_min(int cpu_count, bool dedicated_big_cluster) {
+    if (cpu_count <= 4) return AUTO_TOP_APP_UCLAMP_MIN_ENTRY;
+    if (cpu_count <= 6) return AUTO_TOP_APP_UCLAMP_MIN_BALANCED;
+    return dedicated_big_cluster ? AUTO_TOP_APP_UCLAMP_MIN_PERF : AUTO_TOP_APP_UCLAMP_MIN_BALANCED;
+}
+
+const char* pick_auto_background_uclamp_max(int cpu_count, bool dedicated_big_cluster) {
+    if (cpu_count <= 4) return AUTO_BACKGROUND_UCLAMP_MAX_ENTRY;
+    if (cpu_count <= 6) return AUTO_BACKGROUND_UCLAMP_MAX_BALANCED;
+    return dedicated_big_cluster ? AUTO_BACKGROUND_UCLAMP_MAX_PERF : AUTO_BACKGROUND_UCLAMP_MAX_DEFAULT;
+}
+
+AutoOptimizeProfile build_auto_optimize_profile(const CpuTopology& topology) {
+    const int cpu_count = count_cpus_in_cpuset(topology.all_cores);
+    const bool dedicated_big_cluster = has_dedicated_big_cluster(topology);
+    const bool dedicated_mid_cluster = has_dedicated_mid_cluster(topology);
+
+    std::string system_background_cpus = resolve_system_background_cpus(topology);
+    std::string foreground_cpus = topology.all_cores;
+
+    if (cpu_count >= 8 && dedicated_big_cluster && dedicated_mid_cluster) {
+        foreground_cpus = combine_cpus(topology.cluster_little, topology.cluster_mid);
+    }
+    if (foreground_cpus.empty()) {
+        foreground_cpus = topology.all_cores;
+    }
+
+    std::string background_cpus = topology.cluster_little.empty()
+                                  ? system_background_cpus
+                                  : topology.cluster_little;
+
+    return AutoOptimizeProfile{
+        foreground_cpus,
+        system_background_cpus,
+        background_cpus,
+        pick_auto_top_app_uclamp_min(cpu_count, dedicated_big_cluster),
+        pick_auto_background_uclamp_max(cpu_count, dedicated_big_cluster)
+    };
 }
 
 bool is_mtk_soc() {
@@ -87,6 +159,7 @@ void apply_core_optimizations() {
     const auto& topology = CpuTopology::get(); 
     const auto& config = OmniConfig::get();
     const auto& root = RootEnvironment::get_adapter();
+    const auto auto_profile = build_auto_optimize_profile(topology);
     const bool auto_optimize = config.auto_optimize;
     const bool lite_mode = config.lite_mode && !auto_optimize;
     const bool background_little_core_only = auto_optimize || config.background_little_core_only;
@@ -96,7 +169,7 @@ void apply_core_optimizations() {
     write_node("/dev/cpuset/top-app/cpus", topology.all_cores.c_str());
     
     if (auto_optimize) {
-        write_node("/dev/cpuset/foreground/cpus", topology.all_cores.c_str());
+        write_node("/dev/cpuset/foreground/cpus", auto_profile.foreground_cpus.c_str());
     } else if (!topology.cluster_mid.empty() && topology.cluster_mid != topology.cluster_big) {
         const std::string fg_cpus = combine_cpus(topology.cluster_little, topology.cluster_mid);
         write_node("/dev/cpuset/foreground/cpus", fg_cpus.c_str());
@@ -104,11 +177,11 @@ void apply_core_optimizations() {
         write_node("/dev/cpuset/foreground/cpus", topology.all_cores.c_str());
     }
     
-    const std::string sys_bg_cpus = combine_cpus(topology.cluster_little, topology.cluster_mid);
+    const std::string sys_bg_cpus = auto_profile.system_background_cpus;
     write_node("/dev/cpuset/system-background/cpus", sys_bg_cpus.c_str());
 
     if (background_little_core_only) {
-        write_node("/dev/cpuset/background/cpus", topology.cluster_little.c_str());
+        write_node("/dev/cpuset/background/cpus", auto_profile.background_cpus.c_str());
     } else {
         write_node("/dev/cpuset/background/cpus", sys_bg_cpus.c_str());
     }
@@ -120,11 +193,11 @@ void apply_core_optimizations() {
             write_node("/dev/cpuset/top-app/uclamp.max", DEFAULT_TOP_APP_UCLAMP_MAX);
         }
         write_node("/dev/cpuset/top-app/uclamp.min",
-                   auto_optimize ? AUTO_TOP_APP_UCLAMP_MIN : DEFAULT_TOP_APP_UCLAMP_MIN);
+                   auto_optimize ? auto_profile.top_app_uclamp_min : DEFAULT_TOP_APP_UCLAMP_MIN);
 
         if (auto_optimize) {
-            write_node("/dev/cpuset/background/uclamp.max", AUTO_BACKGROUND_UCLAMP_MAX);
-            write_node("/dev/cpuset/system-background/uclamp.max", AUTO_BACKGROUND_UCLAMP_MAX);
+            write_node("/dev/cpuset/background/uclamp.max", auto_profile.background_uclamp_max);
+            write_node("/dev/cpuset/system-background/uclamp.max", auto_profile.background_uclamp_max);
         } else if (lite_mode) {
             write_node("/dev/cpuset/background/uclamp.max", LITE_BACKGROUND_UCLAMP_MAX);
             write_node("/dev/cpuset/system-background/uclamp.max", LITE_BACKGROUND_UCLAMP_MAX);

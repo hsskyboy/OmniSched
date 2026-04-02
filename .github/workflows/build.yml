@@ -24,6 +24,14 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Read Module Version
+        id: module_version
+        run: |
+          VERSION=$(grep '^version=' module.prop | cut -d'=' -f2)
+          VERSION="${VERSION#v}"
+          [ -n "$VERSION" ] || VERSION="0.0.0"
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2.1
         with:
@@ -44,6 +52,7 @@ jobs:
       - name: Build and Package
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          MODULE_VERSION: ${{ steps.module_version.outputs.value }}
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
@@ -65,10 +74,10 @@ jobs:
           [ -d META-INF ] && cp -r META-INF out/
 
           cd out
-          zip -r9 ../OmniSched-v3.zip .
+          zip -r9 "../OmniSched-v${MODULE_VERSION}.zip" .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OmniSched-v3-${{ github.run_number }}
-          path: OmniSched-v3.zip
+          name: OmniSched-v${{ steps.module_version.outputs.value }}-${{ github.run_number }}
+          path: OmniSched-v${{ steps.module_version.outputs.value }}.zip

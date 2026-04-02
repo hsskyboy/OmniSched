@@ -10,6 +10,8 @@
 #include <chrono>
 #include <algorithm>
 #include "config.h"
+#include "cpu_topology.h"
+#include "utils.h"
 
 class SchedEventFlow {
 private:
@@ -18,12 +20,23 @@ private:
     std::vector<int> watch_descriptors;
     static constexpr int AUTO_TIMEOUT_SECONDS = 600;
 
+    int get_auto_timeout_seconds() const {
+        const auto& topology = CpuTopology::get();
+        const int cpu_count = count_cpus_in_cpuset(topology.all_cores);
+        const bool dedicated_big_cluster =
+            !topology.cluster_big.empty() && topology.cluster_big != topology.cluster_mid;
+
+        if (cpu_count <= 4) return 720;
+        if (cpu_count >= 8 && dedicated_big_cluster) return 480;
+        return AUTO_TIMEOUT_SECONDS;
+    }
+
     int get_timeout_ms() const {
         OmniConfig::reload();
 
         int timeout_seconds = OmniConfig::get().poll_interval_seconds;
         if (OmniConfig::get().auto_optimize) {
-            timeout_seconds = AUTO_TIMEOUT_SECONDS;
+            timeout_seconds = get_auto_timeout_seconds();
         }
 
         timeout_seconds = std::clamp(timeout_seconds, 300, 3600);
@@ -69,7 +82,7 @@ public:
             int n = epoll_wait(epoll_fd, events, 5, get_timeout_ms());
             
             if (n == 0) {
-                // 15min 兜底輪詢
+                // 定期重新应用调度器设置。
                 action();
             } else if (n > 0) {
                 while (read(inotify_fd, buffer, sizeof(buffer)) > 0) {}

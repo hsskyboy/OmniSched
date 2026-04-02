@@ -57,6 +57,10 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
         <div><div class="it">背景严格锁死小核</div><div class="id">将后台进程 Cpuset 隔离在小核集群，改善待机功耗。</div></div>
         <label class="sw"><input type="checkbox" id="i_b"><span class="sl"></span></label>
     </div>
+    <div class="li">
+        <div><div class="it">Lite Mode</div><div class="id">Reduce peak power and heat for better battery life. Gaming performance may drop.</div></div>
+        <label class="sw"><input type="checkbox" id="i_l"><span class="sl"></span></label>
+    </div>
 </div>
 <div id="toast" class="toast">设置已保存并生效</div>
 <script>
@@ -64,12 +68,13 @@ const P = "/data/adb/omnisched/config.json";
 const DEFAULT_CONFIG = {
     poll_interval_seconds: 950,
     cpuset: { background_little_core_only: true },
-    render: { force_vulkan: false }
+    render: { force_vulkan: false },
+    performance: { lite_mode: false }
 };
 let cfg = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 let tm;
 const _=(id)=>document.getElementById(id);
-const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $t=_('toast');
+const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $lm=_('i_l'), $t=_('toast');
 
     async function load() {
         try {
@@ -81,6 +86,7 @@ const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $t=_('toast');
                 if (j.poll_interval_seconds !== undefined) cfg.poll_interval_seconds = j.poll_interval_seconds;
                 if (j.cpuset && j.cpuset.background_little_core_only !== undefined) cfg.cpuset.background_little_core_only = j.cpuset.background_little_core_only;
                 if (j.render && j.render.force_vulkan !== undefined) cfg.render.force_vulkan = j.render.force_vulkan;
+                if (j.performance && j.performance.lite_mode !== undefined) cfg.performance.lite_mode = j.performance.lite_mode;
             }
         } catch (e) {}
         updUI();
@@ -91,6 +97,7 @@ const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $t=_('toast');
         $v.textContent = cfg.poll_interval_seconds;
         $vk.checked = cfg.render.force_vulkan;
         $bg.checked = cfg.cpuset.background_little_core_only;
+        $lm.checked = cfg.performance.lite_mode;
         fill($i);
     }
 
@@ -102,6 +109,7 @@ const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $t=_('toast');
         cfg.poll_interval_seconds = parseInt($i.value);
         cfg.render.force_vulkan = $vk.checked;
         cfg.cpuset.background_little_core_only = $bg.checked;
+        cfg.performance.lite_mode = $lm.checked;
         await ksu.exec(`echo '${JSON.stringify(cfg)}' > ${P}`);
         clearTimeout(tm);
         $t.classList.add('s');
@@ -112,6 +120,7 @@ const $i=_('i_i'), $v=_('v_i'), $vk=_('i_v'), $bg=_('i_b'), $t=_('toast');
     $i.addEventListener('change', save);
     $vk.addEventListener('change', save);
     $bg.addEventListener('change', save);
+    $lm.addEventListener('change', save);
     load();
 </script>
 </body>

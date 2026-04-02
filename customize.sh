@@ -80,10 +80,12 @@ mkdir -p "$CONFIG_DIR"
 
 if [ ! -f "$CONFIG_DIR/config.json" ]; then
     cat <<EOF > "$CONFIG_DIR/config.json"
-{"poll_interval_seconds":950,"cpuset":{"background_little_core_only":true},"render":{"force_vulkan":$FORCE_VULKAN_DEFAULT}}
+{"poll_interval_seconds":950,"cpuset":{"background_little_core_only":true},"render":{"force_vulkan":$VK_FORCE},"performance":{"lite_mode":false}}
 EOF
 else
-    sed -i 's/"force_vulkan"[[:space:]]*:[[:space:]]*\(true\|false\)/"force_vulkan":'"$FORCE_VULKAN_DEFAULT"'/g' "$CONFIG_DIR/config.json" 2>/dev/null
+    sed -i 's/"force_vulkan"[[:space:]]*:[[:space:]]*\(true\|false\)/"force_vulkan":'"$VK_FORCE"'/g' "$CONFIG_DIR/config.json" 2>/dev/null
+    grep -q '"performance"' "$CONFIG_DIR/config.json" || \
+        sed -i 's/}$/,"performance":{"lite_mode":false}}/' "$CONFIG_DIR/config.json" 2>/dev/null
 fi
 
 sleep 0.2

@@ -101,14 +101,23 @@ void apply_core_optimizations() {
     }
 
     if (path_exists("/dev/cpuset/top-app/uclamp.min")) {
-        write_node("/dev/cpuset/top-app/uclamp.max", "max");
+        if (config.lite_mode) {
+            write_node("/dev/cpuset/top-app/uclamp.max", "85");
+        } else {
+            write_node("/dev/cpuset/top-app/uclamp.max", "max");
+        }
         write_node("/dev/cpuset/top-app/uclamp.min", "10");
-        
-        write_node("/dev/cpuset/background/uclamp.max", "50");
-        write_node("/dev/cpuset/system-background/uclamp.max", "50");
+
+        if (config.lite_mode) {
+            write_node("/dev/cpuset/background/uclamp.max", "40");
+            write_node("/dev/cpuset/system-background/uclamp.max", "40");
+        } else {
+            write_node("/dev/cpuset/background/uclamp.max", "50");
+            write_node("/dev/cpuset/system-background/uclamp.max", "50");
+        }
     }
 
-    if (!topology.best_cpu_governor.empty()) {
+    if (!config.lite_mode && !topology.best_cpu_governor.empty()) {
         if (DIR* cpu_dir = opendir("/sys/devices/system/cpu/"); cpu_dir) {
             struct dirent* entry;
             while ((entry = readdir(cpu_dir)) != nullptr) {
@@ -122,25 +131,27 @@ void apply_core_optimizations() {
         }
     }
 
-    const char* adreno_path = "/sys/class/kgsl/kgsl-3d0/devfreq/governor";
-    if (path_exists(adreno_path)) {
-        write_node(adreno_path, "msm-adreno-tz");
-    } else if (DIR* devfreq_dir = opendir("/sys/class/devfreq/"); devfreq_dir) {
-        struct dirent* entry;
-        while ((entry = readdir(devfreq_dir)) != nullptr) {
-            if (entry->d_name[0] == '.') continue;
-            
-            const std::string gov_path = std::string("/sys/class/devfreq/") + entry->d_name + "/governor";
-            const std::string avail_path = std::string("/sys/class/devfreq/") + entry->d_name + "/available_governors";
-            const std::string avail_govs = read_node(avail_path.c_str());
+    if (!config.lite_mode) {
+        const char* adreno_path = "/sys/class/kgsl/kgsl-3d0/devfreq/governor";
+        if (path_exists(adreno_path)) {
+            write_node(adreno_path, "msm-adreno-tz");
+        } else if (DIR* devfreq_dir = opendir("/sys/class/devfreq/"); devfreq_dir) {
+            struct dirent* entry;
+            while ((entry = readdir(devfreq_dir)) != nullptr) {
+                if (entry->d_name[0] == '.') continue;
 
-            if (avail_govs.find("mali_ondemand") != std::string::npos) {
-                write_node(gov_path.c_str(), "mali_ondemand");
-            } else if (avail_govs.find("simple_ondemand") != std::string::npos) {
-                write_node(gov_path.c_str(), "simple_ondemand");
+                const std::string gov_path = std::string("/sys/class/devfreq/") + entry->d_name + "/governor";
+                const std::string avail_path = std::string("/sys/class/devfreq/") + entry->d_name + "/available_governors";
+                const std::string avail_govs = read_node(avail_path.c_str());
+
+                if (avail_govs.find("mali_ondemand") != std::string::npos) {
+                    write_node(gov_path.c_str(), "mali_ondemand");
+                } else if (avail_govs.find("simple_ondemand") != std::string::npos) {
+                    write_node(gov_path.c_str(), "simple_ondemand");
+                }
             }
+            closedir(devfreq_dir);
         }
-        closedir(devfreq_dir);
     }
 
     apply_render_engine_optimizations(config, root);

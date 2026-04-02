@@ -31,4 +31,9 @@ void OmniConfig::reload() {
         current_config.force_vulkan = 
             data["render"].value("force_vulkan", false);
     }
+
+    if (data.contains("performance") && data["performance"].is_object()) {
+        current_config.lite_mode =
+            data["performance"].value("lite_mode", false);
+    }
 }

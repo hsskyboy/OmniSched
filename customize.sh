@@ -80,14 +80,16 @@ mkdir -p "$CONFIG_DIR"
 
 if [ ! -f "$CONFIG_DIR/config.json" ]; then
     cat <<EOF > "$CONFIG_DIR/config.json"
-{"poll_interval_seconds":950,"cpuset":{"background_little_core_only":true},"render":{"force_vulkan":$VK_FORCE},"performance":{"lite_mode":false,"auto_optimize":false}}
+{
+  "poll_interval_seconds": 950,
+  "cpuset": { "background_little_core_only": true },
+  "render": { "vulkan_mode": "off", "vulkan_apps": [] },
+  "power": { "policy": "balanced" },
+  "performance": { "auto_optimize": false }
+}
 EOF
 else
-    sed -i 's/"force_vulkan"[[:space:]]*:[[:space:]]*\(true\|false\)/"force_vulkan":'"$VK_FORCE"'/g' "$CONFIG_DIR/config.json" 2>/dev/null
-    grep -q '"performance"' "$CONFIG_DIR/config.json" || \
-        sed -i 's/}$/,"performance":{"lite_mode":false,"auto_optimize":false}}/' "$CONFIG_DIR/config.json" 2>/dev/null
-    grep -q '"auto_optimize"' "$CONFIG_DIR/config.json" || \
-        sed -i 's/"performance"[[:space:]]*:[[:space:]]*{/"performance":{"auto_optimize":false,/' "$CONFIG_DIR/config.json" 2>/dev/null
+    ui_print "- 侦测到旧配置，将尝试热重载迁移..."
 fi
 
 sleep 0.2

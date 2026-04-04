@@ -44,4 +44,9 @@ void OmniConfig::reload() {
             }
         }
     }
+    if (data.contains("performance") && data["performance"].is_object()) {
+            auto perfNode = data["performance"];
+            current_config.auto_optimize = perfNode.value("auto_optimize", false);
+            current_config.lite_mode = perfNode.value("lite_mode", false);
+        }
 }

@@ -13,6 +13,8 @@ struct OmniConfig {
 
     PowerPolicy power_policy = PowerPolicy::BALANCED;
     bool background_little_core_only = true;
+    bool auto_optimize = false;
+    bool lite_mode = false;
 
     static const OmniConfig& get();
     static void reload();

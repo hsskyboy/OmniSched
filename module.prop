@@ -1,6 +1,6 @@
 id=omnisched
 name=OmniSched
-version=v3.1.3
-versionCode=35
+version=v3.1.4
+versionCode=36
 author=HSSkyBoy & @nikobe918
-description=安卓通用型底層資源分配模組。採用 C++ 響應式事件驅動達成零開銷常駐，內建 WebUI 支援動態配置無縫熱重載。深度適配 Android 14+ MGLRU、Uclamp 算力鉗制與底層渲染引擎劫持，帶來極致效能體驗。
+description=安卓通用底層調度模組。採用 C++ 事件驅動與零開銷常駐，支援 WebUI 熱重載。新增三段式電源策略（節能/平衡/效能）與分應用 Vulkan 管理架構，深度優化 Android 14+ 算力鉗制與渲染性能。

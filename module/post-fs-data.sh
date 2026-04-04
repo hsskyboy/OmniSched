@@ -49,7 +49,6 @@ if [ -d "/sys/class/kgsl" ] || echo "$SOC" | grep -qi "qualcomm"; then
     resetprop -n ro.vendor.qti.sys.fw.bservice_enable true
     resetprop -n ro.vendor.qti.core.ctl_max_cpu 6
     resetprop -n ro.vendor.qti.core.ctl_min_cpu 0
-
 elif echo "$SOC" | grep -qi "mediatek\|mtk"; then
     # 聯發科 (MediaTek) 專屬底層調優
     resetprop -n ro.mtk_perf_fast_start_win 1

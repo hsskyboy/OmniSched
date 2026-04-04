@@ -28,7 +28,7 @@ set(OMNISCHED_DAEMON_SOURCES
 set(OMNISCHED_ZYGISK_SOURCES
     src/config.cpp
     src/utils.cpp
-    src/zygisk_main.cpp
+    src/zygisk_core.cpp
 )
 
 add_executable(omnisched_daemon ${OMNISCHED_DAEMON_SOURCES})
